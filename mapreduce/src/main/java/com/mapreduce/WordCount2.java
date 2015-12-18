@@ -46,6 +46,7 @@ public class WordCount2 {
 	    }
 	    
 	    public static class Map1 extends Mapper<Object, Text, IntWritable, Text>{
+	    	TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
 	    	public void map(Object key, Text value, Context context) throws IOException, InterruptedException{
 	    		String line = value.toString();
 	            StringTokenizer stringTokenizer = new StringTokenizer(line);
@@ -62,9 +63,23 @@ public class WordCount2 {
 	                    String str1 = stringTokenizer.nextToken();
 	                    number = Integer.parseInt(str1.trim());
 	                }
-	                context.write(new IntWritable(number), new Text(word));
+	                map.put(new IntWritable(number), new Text(word));
+	                if(map.size() > 100){
+	                	map.remove(map.firstKey());
+	                }
 	            }
+	            
 	    	}
+	    	@Override
+			protected void cleanup(Context context) throws IOException,
+					InterruptedException {
+	    		Set set = map.entrySet();
+	            Iterator i = set.iterator();
+	            while(i.hasNext()){
+	            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
+	            	context.write(me.getKey(), new Text(me.getValue()));
+	            }
+			}
 	    }
 	    
 	    public static class Reducer2 extends Reducer<IntWritable, Text, IntWritable, Text>{
@@ -88,62 +103,124 @@ public class WordCount2 {
 	    public static class MapperLength extends Mapper<LongWritable, Text, Text, IntWritable> {
 		       private final static IntWritable one = new IntWritable(1);
 		       private Text word = new Text();
-		       
+		       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
 		       public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 		    	   Configuration conf = context.getConfiguration();
 		    	   int wordLength = Integer.parseInt(conf.get("wordlength"));
 		    	   String line = value.toString();
-		           StringTokenizer tokenizer = new StringTokenizer(line);
-		           while (tokenizer.hasMoreTokens()) {
-		        	   
-		               word.set(tokenizer.nextToken());
-		               if(word.getLength() == wordLength){
-		               context.write(word, one);
+		           StringTokenizer stringTokenizer = new StringTokenizer(line);
+		            {
+		                int number = 999;
+		                String word = "empty";
+
+		                if (stringTokenizer.hasMoreTokens()) {
+		                    String str0 = stringTokenizer.nextToken();
+		                    word = str0.trim();
+		                }
+
+		                if (stringTokenizer.hasMoreElements()) {
+		                    String str1 = stringTokenizer.nextToken();
+		                    number = Integer.parseInt(str1.trim());
+		                }
+		                if(word.length() == wordLength){
+		               //context.write(word, one);
+		            	   map.put(new IntWritable(number), new Text(word));
+			                
 		        	   }
-		           }
+		               if(map.size() > 100){
+		                	map.remove(map.firstKey());
+		                }
+		            }
 		       }
+		       @Override
+				protected void cleanup(Context context) throws IOException,
+						InterruptedException {
+		    		Set set = map.entrySet();
+		            Iterator i = set.iterator();
+		            while(i.hasNext()){
+		            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
+		            	context.write(new Text(me.getValue()), me.getKey());
+		            }
+				}
 		    } 
 		           
 		    public static class ReduceLength extends Reducer<Text, IntWritable, Text, IntWritable> {
-		   
+		       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
 		       public void reduce(Text key, Iterable<IntWritable> values, Context context) 
 		         throws IOException, InterruptedException {
-		           int sum = 0;
-		           for (IntWritable val : values) {
-		               sum += val.get();
-		           }
-		           context.write(key, new IntWritable(sum));
+		    	   for(IntWritable value : values){
+		            	map.put(value, key);
+		            }
+		            if(map.size() > 100){
+		            	map.remove(map.firstKey());
+		            }
+		            Set set = map.entrySet();
+		            Iterator i = set.iterator();
+		            while(i.hasNext()){
+		            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
+		            	context.write(new Text(me.getValue()), me.getKey());
+		            }
 		       }
 		    }
 		    
 		    public static class MapperPref extends Mapper<LongWritable, Text, Text, IntWritable> {
-			       private final static IntWritable one = new IntWritable(1);
-			       private Text word = new Text();
-			       
+			       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
 			       public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			    	   Configuration conf = context.getConfiguration();
 			    	   String wordPref = conf.get("wordPref");
 			    	   String line = value.toString();
-			           StringTokenizer tokenizer = new StringTokenizer(line);
-			           while (tokenizer.hasMoreTokens()) {
-			        	   String tok = tokenizer.nextToken();
-			        	   if(tok.startsWith(wordPref)){
-			               word.set(tok);			               
-			               context.write(word, one);
-			        	   }
-			           }
+			    	   StringTokenizer stringTokenizer = new StringTokenizer(line);
+			           {
+			                int number = 999;
+			                String word = "empty";
+
+			                if (stringTokenizer.hasMoreTokens()) {
+			                    String str0 = stringTokenizer.nextToken();
+			                    word = str0.trim();
+			                }
+
+			                if (stringTokenizer.hasMoreElements()) {
+			                    String str1 = stringTokenizer.nextToken();
+			                    number = Integer.parseInt(str1.trim());
+			                }
+			                if(word.startsWith(wordPref)){
+			                	map.put(new IntWritable(number), new Text(word));
+			                }
+			                
+			        	   if(map.size() > 100){
+			                	map.remove(map.firstKey());
+			                }		
+			           	}
+			           
 			       }
+			       @Override
+					protected void cleanup(Context context) throws IOException,
+							InterruptedException {
+			    		Set set = map.entrySet();
+			            Iterator i = set.iterator();
+			            while(i.hasNext()){
+			            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
+			            	context.write(new Text(me.getValue()), me.getKey());
+			            }
+					}
 			    } 
 			           
 			    public static class ReducePref extends Reducer<Text, IntWritable, Text, IntWritable> {
-			   
+			    	TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
 			       public void reduce(Text key, Iterable<IntWritable> values, Context context) 
 			         throws IOException, InterruptedException {
-			           int sum = 0;
-			           for (IntWritable val : values) {
-			               sum += val.get();
-			           }
-			           context.write(key, new IntWritable(sum));
+			    	   for(IntWritable value : values){
+			            	map.put(value, key);
+			            }
+			            if(map.size() > 100){
+			            	map.remove(map.firstKey());
+			            }
+			            Set set = map.entrySet();
+			            Iterator i = set.iterator();
+			            while(i.hasNext()){
+			            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
+			            	context.write(new Text(me.getValue()), me.getKey());
+			            }
 			       }
 			    }
 	    
@@ -178,8 +255,8 @@ public class WordCount2 {
 	       job2.setInputFormatClass(TextInputFormat.class);
 	       job2.setOutputFormatClass(TextOutputFormat.class);
 	       
-	       FileInputFormat.addInputPath(job2, new Path("C:/Users/Antoine/workspace/mapreduce/out/part-r-00000"));
-	       FileOutputFormat.setOutputPath(job2, new Path(args[1]+"final"));
+	       FileInputFormat.addInputPath(job2, new Path("out/part-r-00000"));
+	       FileOutputFormat.setOutputPath(job2, new Path("a_"+args[1]));
 	       
 	       String strLength = args[2];
 	       conf3.set("wordlength", strLength);
@@ -194,8 +271,8 @@ public class WordCount2 {
 	       job3.setInputFormatClass(TextInputFormat.class);
 	       job3.setOutputFormatClass(TextOutputFormat.class);
 
-	       FileInputFormat.addInputPath(job3, new Path(args[0]));
-	       FileOutputFormat.setOutputPath(job3, new Path(args[1]+"finalLength"));
+	       FileInputFormat.addInputPath(job3, new Path("out/part-r-00000"));
+	       FileOutputFormat.setOutputPath(job3, new Path("b_"+args[1]));
 	       
 	       String prefix = args[3];
 	       conf4.set("wordPref", prefix);
@@ -210,8 +287,8 @@ public class WordCount2 {
 	       job4.setInputFormatClass(TextInputFormat.class);
 	       job4.setOutputFormatClass(TextOutputFormat.class);
 
-	       FileInputFormat.addInputPath(job4, new Path(args[0]));
-	       FileOutputFormat.setOutputPath(job4, new Path(args[1]+"finalPREFIX"));
+	       FileInputFormat.addInputPath(job4, new Path("out/part-r-00000"));
+	       FileOutputFormat.setOutputPath(job4, new Path("c_"+args[1]));
 	       
 	       job.submit();
 	       if(job.waitForCompletion(true)){
