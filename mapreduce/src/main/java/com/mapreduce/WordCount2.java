@@ -132,6 +132,9 @@ public class WordCount2 {
 		                }
 		            }
 		       }
+		       
+		       
+		       
 		       @Override
 				protected void cleanup(Context context) throws IOException,
 						InterruptedException {
@@ -224,6 +227,20 @@ public class WordCount2 {
 			       }
 			    }
 	    
+			    public static class DescendingKeyComparator extends WritableComparator {
+			        protected DescendingKeyComparator() {
+			            super(IntWritable.class, true);
+			        }
+
+			        @SuppressWarnings("rawtypes")
+			        @Override
+			        public int compare(WritableComparable w1, WritableComparable w2) {
+			        	IntWritable key1 = (IntWritable) w1;
+			        	IntWritable key2 = (IntWritable) w2;          
+			            return -1 * key1.compareTo(key2);
+			        }
+			    }
+			    
 	    public static void main(String[] args) throws Exception {
 	       
 	       Configuration conf = new Configuration();
@@ -245,7 +262,8 @@ public class WordCount2 {
 	       FileOutputFormat.setOutputPath(job, new Path(args[1]));
 	           
 	       Job job2 = new Job(conf2, "worcount3");
-	       
+	             
+	       job2.setSortComparatorClass(DescendingKeyComparator.class);
 	       job2.setOutputKeyClass(IntWritable.class);
 	       job2.setOutputValueClass(Text.class);
 	       
@@ -262,6 +280,8 @@ public class WordCount2 {
 	       conf3.set("wordlength", strLength);
 	       Job job3 = new Job(conf3, "WordLength");
 	       
+	       job3.setSortComparatorClass(DescendingKeyComparator.class);
+	       
 	       job3.setOutputKeyClass(Text.class);
 	       job3.setOutputValueClass(IntWritable.class);
 	       
@@ -277,6 +297,8 @@ public class WordCount2 {
 	       String prefix = args[3];
 	       conf4.set("wordPref", prefix);
 	       Job job4 = new Job(conf4, "WordPrefi");
+	       
+	       job4.setSortComparatorClass(DescendingKeyComparator.class);
 	       
 	       job4.setOutputKeyClass(Text.class);
 	       job4.setOutputValueClass(IntWritable.class);
