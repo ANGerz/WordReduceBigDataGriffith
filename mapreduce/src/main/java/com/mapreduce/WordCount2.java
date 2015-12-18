@@ -100,11 +100,11 @@ public class WordCount2 {
 	        }
 	    }
 	    
-	    public static class MapperLength extends Mapper<LongWritable, Text, Text, IntWritable> {
+	    public static class MapperLength extends Mapper<Object, Text, IntWritable, Text> {
 		       private final static IntWritable one = new IntWritable(1);
 		       private Text word = new Text();
 		       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
-		       public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+		       public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 		    	   Configuration conf = context.getConfiguration();
 		    	   int wordLength = Integer.parseInt(conf.get("wordlength"));
 		    	   String line = value.toString();
@@ -142,17 +142,17 @@ public class WordCount2 {
 		            Iterator i = set.iterator();
 		            while(i.hasNext()){
 		            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
-		            	context.write(new Text(me.getValue()), me.getKey());
+		            	context.write(me.getKey(), new Text(me.getValue()));
 		            }
 				}
 		    } 
 		           
-		    public static class ReduceLength extends Reducer<Text, IntWritable, Text, IntWritable> {
+		public static class ReduceLength extends Reducer<IntWritable, Text, IntWritable, Text> {
 		       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
-		       public void reduce(Text key, Iterable<IntWritable> values, Context context) 
+		       public void reduce(IntWritable key, Iterable<Text> values, Context context) 
 		         throws IOException, InterruptedException {
-		    	   for(IntWritable value : values){
-		            	map.put(value, key);
+		    	   for(Text value : values){
+		            	map.put(key, value);
 		            }
 		            if(map.size() > 100){
 		            	map.remove(map.firstKey());
@@ -161,14 +161,14 @@ public class WordCount2 {
 		            Iterator i = set.iterator();
 		            while(i.hasNext()){
 		            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
-		            	context.write(new Text(me.getValue()), me.getKey());
+		            	context.write(me.getKey(), new Text(me.getValue()));
 		            }
-		       }
+		        }
 		    }
 		    
-		    public static class MapperPref extends Mapper<LongWritable, Text, Text, IntWritable> {
+		public static class MapperPref extends Mapper<Object, Text, IntWritable, Text> {
 			       TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
-			       public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+			       public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			    	   Configuration conf = context.getConfiguration();
 			    	   String wordPref = conf.get("wordPref");
 			    	   String line = value.toString();
@@ -203,17 +203,17 @@ public class WordCount2 {
 			            Iterator i = set.iterator();
 			            while(i.hasNext()){
 			            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
-			            	context.write(new Text(me.getValue()), me.getKey());
+			            	context.write(me.getKey(), new Text(me.getValue()));
 			            }
 					}
 			    } 
 			           
-			    public static class ReducePref extends Reducer<Text, IntWritable, Text, IntWritable> {
+		public static class ReducePref extends Reducer<IntWritable, Text, IntWritable, Text> {
 			    	TreeMap<IntWritable, Text> map = new TreeMap<IntWritable, Text>();
-			       public void reduce(Text key, Iterable<IntWritable> values, Context context) 
+			       public void reduce(IntWritable key, Iterable<Text> values, Context context) 
 			         throws IOException, InterruptedException {
-			    	   for(IntWritable value : values){
-			            	map.put(value, key);
+			    	   for(Text value : values){
+			            	map.put(key, value);
 			            }
 			            if(map.size() > 100){
 			            	map.remove(map.firstKey());
@@ -222,12 +222,12 @@ public class WordCount2 {
 			            Iterator i = set.iterator();
 			            while(i.hasNext()){
 			            	Map.Entry<IntWritable, Text> me = (Map.Entry)i.next();
-			            	context.write(new Text(me.getValue()), me.getKey());
+			            	context.write(me.getKey(), new Text(me.getValue()));
 			            }
 			       }
 			    }
 	    
-			    public static class DescendingKeyComparator extends WritableComparator {
+		public static class DescendingKeyComparator extends WritableComparator {
 			        protected DescendingKeyComparator() {
 			            super(IntWritable.class, true);
 			        }
@@ -264,6 +264,7 @@ public class WordCount2 {
 	       Job job2 = new Job(conf2, "worcount3");
 	             
 	       job2.setSortComparatorClass(DescendingKeyComparator.class);
+	       
 	       job2.setOutputKeyClass(IntWritable.class);
 	       job2.setOutputValueClass(Text.class);
 	       
@@ -282,8 +283,8 @@ public class WordCount2 {
 	       
 	       job3.setSortComparatorClass(DescendingKeyComparator.class);
 	       
-	       job3.setOutputKeyClass(Text.class);
-	       job3.setOutputValueClass(IntWritable.class);
+	       job3.setOutputKeyClass(IntWritable.class);
+	       job3.setOutputValueClass(Text.class);
 	       
 	       job3.setMapperClass(MapperLength.class);
 	       job3.setReducerClass(ReduceLength.class);
@@ -300,8 +301,8 @@ public class WordCount2 {
 	       
 	       job4.setSortComparatorClass(DescendingKeyComparator.class);
 	       
-	       job4.setOutputKeyClass(Text.class);
-	       job4.setOutputValueClass(IntWritable.class);
+	       job4.setOutputKeyClass(IntWritable.class);
+	       job4.setOutputValueClass(Text.class);
 	       
 	       job4.setMapperClass(MapperPref.class);
 	       job4.setReducerClass(ReducePref.class);
